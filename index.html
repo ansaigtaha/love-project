@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Touch of Love - For IMMII</title>
+    <title>Touch of Love</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
             --secondary: #ffb3c1;
             --gold: #ffd700;
             --bg-gradient: linear-gradient(135deg, #FFF0F5 0%, #FFE4E1 100%);
-            --glass: rgba(255, 255, 255, 0.4);
+            --glass: rgba(255, 255, 255, 0.6);
             --glass-border: rgba(255, 255, 255, 0.8);
             --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         }
@@ -25,12 +25,14 @@
             overflow: hidden;
             background: var(--bg-gradient);
             font-family: 'Montserrat', sans-serif;
+            /* Fix for mobile address bars */
             height: 100vh;
+            height: 100dvh; 
             width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            touch-action: none; /* Prevent default browser scrolling */
+            touch-action: none;
         }
 
         /* Canvas for Particles */
@@ -49,20 +51,23 @@
             z-index: 10;
             width: 85%;
             max-width: 500px;
-            min-height: 60vh;
+            /* Responsive height adjustments */
+            min-height: 50vh;
+            padding: 30px 20px;
+            
             background: var(--glass);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             box-shadow: var(--shadow);
+            
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 40px 20px;
-            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            
             opacity: 0;
             transform: translateY(20px);
             animation: cardEntrance 1.5s forwards;
@@ -76,71 +81,99 @@
         h1 {
             font-family: 'Great Vibes', cursive;
             color: var(--primary);
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            line-height: 1.2;
+            font-size: 3.5rem; /* Default for desktop */
+            margin-bottom: 15px;
+            line-height: 1.1;
             text-shadow: 2px 2px 4px rgba(255, 192, 203, 0.5);
-            transition: transform 0.5s ease;
+            /* Important: Cursive looks bad in ALL CAPS */
+            text-transform: none; 
         }
 
         p {
-            color: #555;
+            color: #444;
             font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            font-weight: 400;
-        }
-
-        .highlight-text {
-            color: #d63384;
-            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 40px;
+            font-weight: 500;
         }
 
         /* Instruction Hint (at bottom) */
         .instruction {
             position: absolute;
-            bottom: 30px;
-            font-size: 0.9rem;
-            color: #888;
+            bottom: 20px;
+            font-size: 0.8rem;
+            color: #ff4d6d;
             letter-spacing: 1px;
             text-transform: uppercase;
+            font-weight: bold;
             animation: pulse 2s infinite;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* Animations classes for JS toggling */
+        /* Start Overlay (Fix for Audio) */
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s;
+        }
+        
+        #start-btn {
+            padding: 15px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Animations */
         .fade-out { opacity: 0; transform: scale(0.95); transition: opacity 0.5s, transform 0.5s; }
         .fade-in { opacity: 1; transform: scale(1); transition: opacity 0.8s, transform 0.8s; }
-        
         .heart-beat { animation: beat 0.8s infinite alternate; }
         @keyframes beat { to { transform: scale(1.1); } }
+        .final-glow { box-shadow: 0 0 50px var(--gold); border: 2px solid var(--gold); }
 
-        /* Final Stage Special Styling */
-        .final-glow {
-            box-shadow: 0 0 50px var(--gold);
-            border: 2px solid var(--gold);
+        /* Mobile Specific Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.8rem; } /* Smaller font for mobile */
+            p { font-size: 1rem; margin-bottom: 30px; }
+            .card { width: 90%; min-height: 45vh; }
         }
-
-        /* Music Control (Hidden but functional) */
-        #bg-music { display: none; }
 
     </style>
 </head>
 <body>
 
+    <div id="start-overlay">
+        <h1 style="font-size: 2rem; margin-bottom: 20px;">For You...</h1>
+        <button id="start-btn">Tap to Open ❤️</button>
+    </div>
+
     <canvas id="particle-canvas"></canvas>
 
     <div class="card" id="main-card">
-        <h1 id="main-text">OY IMMII<br>Tap anywhere…</h1>
-        <p id="sub-text">I made this only for you ❤️</p>
+        <h1 id="main-text">Oy Immii</h1> 
+        <p id="sub-text">Tap anywhere to begin...</p>
         <div class="instruction" id="instruction-text">Tap Screen</div>
     </div>
 
-    <audio id="bg-music" loop>
+    <audio id="bg-music" loop preload="auto">
         <source src="music.mp3" type="audio/mpeg">
     </audio>
 
@@ -148,46 +181,41 @@
         // --- CONFIGURATION ---
         const stateConfig = [
             {
-                // State 0: Intro
                 id: 0,
                 type: 'tap',
-                main: "OY IMMII<br>Tap anywhere…",
+                main: "Oy Immii", // Title Case matches cursive font better
                 sub: "I made this only for you ❤️",
                 instr: "Tap Screen",
                 color: "#ff4d6d"
             },
             {
-                // State 1: First Love Message
                 id: 1,
                 type: 'longpress',
-                main: "Dear IMMII<br>I love you soo much",
+                main: "Dear Immii",
                 sub: "From the moment you entered my life,<br>everything started feeling right.",
-                instr: "Long Press (Hold) for 2 seconds",
+                instr: "Long Press (Hold) for 2s",
                 color: "#ff4d6d"
             },
             {
-                // State 2: Playful Love
                 id: 2,
                 type: 'swipe',
-                main: "OMMMMAAAAHHHHH",
+                main: "Ommmaaaahhhhh",
                 sub: "That’s my heart every time I think of you.<br>(Muah!)",
                 instr: "Swipe Up",
                 color: "#d63384"
             },
             {
-                // State 3: Promise
                 id: 3,
                 type: 'doubletap',
-                main: "YOU ARE MINE AND<br>I AM YOURS",
+                main: "You are Mine",
                 sub: "Not because we have to… but because we want to.<br>In every world, I would still choose you.",
-                instr: "Double Tap (Tap twice fast)",
+                instr: "Double Tap (Tap twice)",
                 color: "#e0aaff"
             },
             {
-                // State 4: Finale
                 id: 4,
                 type: 'end',
-                main: "THANK YOU FOR<br>COMING IN MY LIFE",
+                main: "Thank You",
                 sub: "You turned my ordinary days into forever memories.<br>My heart found its home in you, IMMII.<br><br><b>Forever & Always ❤️</b>",
                 instr: "",
                 color: "#ffd700"
@@ -197,17 +225,25 @@
         let currentStateIndex = 0;
         let isTransitioning = false;
         
-        // --- AUDIO SETUP ---
+        // --- AUDIO ENGINE ---
         const audio = document.getElementById('bg-music');
-        let audioStarted = false;
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtn = document.getElementById('start-btn');
 
-        function startAudio() {
-            if (!audioStarted) {
-                audio.volume = 0.3; // Low volume
-                audio.play().catch(e => console.log("Audio waiting for interaction"));
-                audioStarted = true;
-            }
-        }
+        // Force Audio on First Click (Solves Mobile Issue)
+        startBtn.addEventListener('click', () => {
+            audio.volume = 0.5;
+            audio.play().then(() => {
+                // Audio started successfully
+                startOverlay.style.opacity = '0';
+                setTimeout(() => startOverlay.remove(), 500);
+            }).catch(error => {
+                console.log("Audio Play Failed:", error);
+                // Even if it fails, remove overlay so she can see the site
+                startOverlay.style.opacity = '0';
+                setTimeout(() => startOverlay.remove(), 500);
+            });
+        });
 
         // --- DOM ELEMENTS ---
         const card = document.getElementById('main-card');
@@ -224,60 +260,42 @@
 
         document.addEventListener('pointerdown', handleStart, false);
         document.addEventListener('pointerup', handleEnd, false);
-        // Prevent context menu on long press
-        window.oncontextmenu = function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        };
+        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
         function handleStart(e) {
             if (isTransitioning) return;
-            startAudio(); // Ensure music starts
-            
             touchStartY = e.clientY;
             isLongPress = false;
 
-            // Logic for Long Press (State 1 -> 2)
             if (stateConfig[currentStateIndex].type === 'longpress') {
-                card.style.transform = "scale(0.98)"; // Visual feedback
+                card.style.transform = "scale(0.95)";
                 pressTimer = setTimeout(() => {
                     isLongPress = true;
-                    triggerHaptic();
+                    if(navigator.vibrate) navigator.vibrate(50);
                     nextState();
-                }, 1500); // 1.5s duration
+                }, 1500);
             }
         }
 
         function handleEnd(e) {
             if (isTransitioning) return;
             touchEndY = e.clientY;
-            
-            // Clear long press timer if released early
             if (pressTimer) clearTimeout(pressTimer);
             card.style.transform = "scale(1)";
 
             const type = stateConfig[currentStateIndex].type;
 
             if (type === 'tap' && !isLongPress) {
-                triggerHaptic();
                 createBurst(e.clientX, e.clientY);
                 nextState();
             }
-            
             else if (type === 'swipe') {
-                // Check if swipe up (start Y > end Y) by at least 50px
-                if (touchStartY - touchEndY > 50) {
-                    triggerHaptic();
-                    nextState();
-                }
+                if (touchStartY - touchEndY > 50) nextState();
             }
-            
             else if (type === 'doubletap') {
                 const currentTime = new Date().getTime();
                 const tapLength = currentTime - lastTapTime;
                 if (tapLength < 300 && tapLength > 0) {
-                    triggerHaptic();
                     createBurst(e.clientX, e.clientY);
                     nextState();
                 }
@@ -285,7 +303,6 @@
             }
         }
 
-        // --- STATE MACHINE ENGINE ---
         function nextState() {
             if (currentStateIndex >= stateConfig.length - 1) return;
 
@@ -293,50 +310,34 @@
             currentStateIndex++;
             const data = stateConfig[currentStateIndex];
 
-            // 1. Fade Out
             card.classList.add('fade-out');
 
             setTimeout(() => {
-                // 2. Update Content
                 mainText.innerHTML = data.main;
                 subText.innerHTML = data.sub;
                 instrText.innerText = data.instr;
-                
-                // Update Particle Color
                 particleColor = data.color;
 
-                // Special Effects based on stage
-                if (data.id === 2) { // Playful
-                     mainText.classList.add('heart-beat');
-                } else {
-                     mainText.classList.remove('heart-beat');
-                }
+                if (data.id === 2) mainText.classList.add('heart-beat');
+                else mainText.classList.remove('heart-beat');
 
-                if (data.id === 4) { // Final
+                if (data.id === 4) {
                     card.classList.add('final-glow');
                     instrText.style.display = 'none';
-                    // Trigger massive particle explosion
                     for(let i=0; i<5; i++) setTimeout(() => createBurst(window.innerWidth/2, window.innerHeight/2), i*300);
                 }
 
-                // 3. Fade In
                 card.classList.remove('fade-out');
                 card.classList.add('fade-in');
                 
-                // Reset flag
                 setTimeout(() => {
                     card.classList.remove('fade-in');
                     isTransitioning = false;
                 }, 800);
-
             }, 500);
         }
 
-        function triggerHaptic() {
-            if (navigator.vibrate) navigator.vibrate(50);
-        }
-
-        // --- PARTICLE SYSTEM (CANVAS) ---
+        // --- PARTICLE SYSTEM ---
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -353,10 +354,10 @@
             constructor(x, y) {
                 this.x = x ? x : Math.random() * canvas.width;
                 this.y = y ? y : canvas.height + Math.random() * 100;
-                this.size = Math.random() * 15 + 5;
-                this.speedY = Math.random() * 1 + 0.5;
-                this.speedX = (Math.random() - 0.5) * 1;
-                this.opacity = Math.random() * 0.5 + 0.1;
+                this.size = Math.random() * 12 + 4;
+                this.speedY = Math.random() * 1.5 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 1.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
                 this.color = particleColor;
             }
             update() {
@@ -368,7 +369,7 @@
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = this.opacity;
                 ctx.beginPath();
-                // Draw Heart Shape
+                // Heart shape math
                 let topCurveHeight = this.size * 0.3;
                 ctx.moveTo(this.x, this.y + topCurveHeight);
                 ctx.bezierCurveTo(this.x, this.y, this.x - this.size / 2, this.y, this.x - this.size / 2, this.y + topCurveHeight);
@@ -381,27 +382,22 @@
         }
 
         function initParticles() {
-            for (let i = 0; i < 30; i++) {
-                particles.push(new Particle());
-            }
+            for (let i = 0; i < 35; i++) particles.push(new Particle());
         }
-
         function createBurst(x, y) {
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 20; i++) {
                 let p = new Particle(x, y);
-                p.speedY = (Math.random() - 0.5) * 10;
-                p.speedX = (Math.random() - 0.5) * 10;
-                p.y = y; // Force start at touch
+                p.speedY = (Math.random() - 0.5) * 12;
+                p.speedX = (Math.random() - 0.5) * 12;
+                p.y = y;
                 particles.push(p);
             }
         }
-
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
-                // Remove burst particles that go off screen
                 if (particles[i].size > 30 && particles[i].opacity <= 0) {
                      particles.splice(i, 1);
                      i--;
@@ -409,10 +405,8 @@
             }
             requestAnimationFrame(animateParticles);
         }
-
         initParticles();
         animateParticles();
-
     </script>
 </body>
 </html>
