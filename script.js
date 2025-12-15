@@ -1,28 +1,42 @@
 // ==========================================
-// 1. HELPER: GENERATE HEART TEXTURE
+// 1. TEXTURE GENERATORS (Hearts, Balloons, Kisses)
 // ==========================================
-function createHeartTexture() {
+function createTexture(type) {
     const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 128;
+    canvas.width = 64; canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    // Draw Heart Shape
-    ctx.fillStyle = "#ff5588";
-    ctx.beginPath();
-    ctx.moveTo(64, 30);
-    ctx.bezierCurveTo(64, 25, 60, 10, 30, 10);
-    ctx.bezierCurveTo(0, 10, 0, 50, 64, 110);
-    ctx.bezierCurveTo(128, 50, 128, 10, 98, 10);
-    ctx.bezierCurveTo(70, 10, 64, 25, 64, 30);
-    ctx.fill();
-
+    if (type === 'heart') {
+        ctx.fillStyle = "#ff0055"; // Red
+        ctx.beginPath();
+        ctx.moveTo(32, 15);
+        ctx.bezierCurveTo(32, 12, 30, 5, 15, 5);
+        ctx.bezierCurveTo(0, 5, 0, 25, 32, 55);
+        ctx.bezierCurveTo(64, 25, 64, 5, 49, 5);
+        ctx.bezierCurveTo(35, 5, 32, 12, 32, 15);
+        ctx.fill();
+    } else if (type === 'balloon') {
+        ctx.fillStyle = "#8800ff"; // Purple/Blue
+        ctx.beginPath();
+        ctx.arc(32, 28, 22, 0, Math.PI * 2);
+        ctx.fill();
+        // String
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.beginPath();
+        ctx.moveTo(32, 50);
+        ctx.lineTo(32, 64);
+        ctx.stroke();
+    } else if (type === 'kiss') {
+        ctx.fillStyle = "#ff66b2"; // Pink
+        ctx.font = "40px Arial";
+        ctx.fillText("💋", 10, 45); // Using Emoji for Kiss shape
+    }
+    
     // Add Glow
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 10;
     ctx.shadowColor = "white";
-    ctx.fill();
-
-    const texture = new THREE.CanvasTexture(canvas);
-    return texture;
+    
+    return new THREE.CanvasTexture(canvas);
 }
 
 // ==========================================
@@ -33,176 +47,188 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x050005, 0.002);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 50;
+camera.position.z = 40;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 container.appendChild(renderer.domElement);
 
-// --- PARTICLE SYSTEMS ---
+// --- PARTICLE ENGINES (One for each type) ---
+function createParticleSystem(type, count) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const vel = new Float32Array(count * 3);
+    const life = new Float32Array(count); // Lifetime
 
-// System A: Ambient Floating Dust (Atmosphere)
-const dustGeo = new THREE.BufferGeometry();
-const dustCount = 1000;
-const dustPos = new Float32Array(dustCount * 3);
-for(let i=0; i<dustCount*3; i++) dustPos[i] = (Math.random()-0.5)*200;
-dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-const dustMat = new THREE.PointsMaterial({ size: 0.4, color: 0xffccdd, transparent: true, opacity: 0.6 });
-const dustParticles = new THREE.Points(dustGeo, dustMat);
-scene.add(dustParticles);
-
-// System B: Explosion Particles (Hearts)
-const heartTexture = createHeartTexture();
-const explodeCount = 2000;
-const explodeGeo = new THREE.BufferGeometry();
-const explodePos = new Float32Array(explodeCount * 3);
-const explodeVel = new Float32Array(explodeCount * 3); // Velocity
-const explodeOpacities = new Float32Array(explodeCount); // Opacity lifecycle
-
-// Initialize hidden
-for(let i=0; i<explodeCount; i++) {
-    explodePos[i*3+1] = -500; // Hide below screen
-    explodeOpacities[i] = 0;
-}
-
-explodeGeo.setAttribute('position', new THREE.BufferAttribute(explodePos, 3));
-explodeGeo.setAttribute('alpha', new THREE.BufferAttribute(explodeOpacities, 1));
-
-const explodeMat = new THREE.ShaderMaterial({
-    uniforms: {
-        pointTexture: { value: heartTexture }
-    },
-    vertexShader: `
-        attribute float alpha;
-        varying float vAlpha;
-        void main() {
-            vAlpha = alpha;
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            gl_PointSize = 20.0 * (300.0 / -mvPosition.z);
-            gl_Position = projectionMatrix * mvPosition;
-        }
-    `,
-    fragmentShader: `
-        uniform sampler2D pointTexture;
-        varying float vAlpha;
-        void main() {
-            gl_FragColor = texture2D(pointTexture, gl_PointCoord);
-            gl_FragColor.a *= vAlpha;
-        }
-    `,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-});
-
-const explosions = new THREE.Points(explodeGeo, explodeMat);
-scene.add(explosions);
-
-// Function to launch Fireworks
-function triggerFirework() {
-    const positions = explodeGeo.attributes.position.array;
-    const alphas = explodeGeo.attributes.alpha.array;
-    
-    // Activate 50 particles at a time
-    for(let i=0; i<50; i++) {
-        // Find a "dead" particle (alpha near 0)
-        const randIndex = Math.floor(Math.random() * explodeCount);
-        
-        // Set Start Position (Bottom Center-ish)
-        positions[randIndex*3] = (Math.random() - 0.5) * 10;
-        positions[randIndex*3+1] = -20; 
-        positions[randIndex*3+2] = (Math.random() - 0.5) * 10;
-
-        // Set Velocity (Up and Out)
-        explodeVel[randIndex*3] = (Math.random() - 0.5) * 1.5; // X
-        explodeVel[randIndex*3+1] = 0.5 + Math.random() * 1.0; // Y (Up)
-        explodeVel[randIndex*3+2] = (Math.random() - 0.5) * 1.5; // Z
-
-        alphas[randIndex] = 1.0; // Visible
+    for(let i=0; i<count; i++) {
+        pos[i*3+1] = -500; // Hide initially
+        life[i] = 0;
     }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('life', new THREE.BufferAttribute(life, 1));
+
+    const mat = new THREE.PointsMaterial({
+        map: createTexture(type),
+        size: type === 'balloon' ? 1.5 : 1.0, // Balloons bigger
+        transparent: true,
+        opacity: 1,
+        depthWrite: false,
+        blending: THREE.NormalBlending // Better visibility for colors
+    });
+
+    const points = new THREE.Points(geo, mat);
+    scene.add(points);
+    return { points, geo, vel, count };
+}
+
+const hearts = createParticleSystem('heart', 1000);
+const balloons = createParticleSystem('balloon', 500);
+const kisses = createParticleSystem('kiss', 500);
+const systems = [hearts, balloons, kisses];
+
+// Function to Launch Particles
+function explode(amount) {
+    // Randomly choose a system to activate
+    systems.forEach(sys => {
+        const positions = sys.geo.attributes.position.array;
+        const lifes = sys.geo.attributes.life.array;
+        
+        // Spawn 'amount' particles
+        for(let i=0; i<amount; i++) {
+            // Find a dead particle
+            const idx = Math.floor(Math.random() * sys.count);
+            
+            if (lifes[idx] <= 0) {
+                // Reset Position (Bottom Center with spread)
+                positions[idx*3] = (Math.random() - 0.5) * 20;
+                positions[idx*3+1] = -25; 
+                positions[idx*3+2] = (Math.random() - 0.5) * 10;
+
+                // Velocity (Upwards)
+                sys.vel[idx*3] = (Math.random() - 0.5) * 0.5; // X spread
+                sys.vel[idx*3+1] = 0.3 + Math.random() * 0.5; // Y Speed
+                sys.vel[idx*3+2] = (Math.random() - 0.5) * 0.5; // Z spread
+
+                lifes[idx] = 1.0; // Life starts at 1
+            }
+        }
+        sys.geo.attributes.position.needsUpdate = true;
+        sys.geo.attributes.life.needsUpdate = true;
+    });
 }
 
 // ==========================================
-// 3. GAME LOGIC & HAND TRACKING
+// 3. LOGIC & TRACKING
 // ==========================================
-let currentStage = 1; // 1 = Q1, 2 = Q2, 3 = Final
+let currentStage = 1; 
 let transitionLocked = false;
+let holdTimer = 0; // To force user to hold gesture
 
 const uiStage1 = document.getElementById('stage-1');
 const uiStage2 = document.getElementById('stage-2');
 const uiStage3 = document.getElementById('stage-3');
-
 const videoElement = document.getElementsByClassName('input_video')[0];
 
 function onResults(results) {
-    // Hide loading screen once tracking starts
-    const loader = document.getElementById('loading-screen');
-    if(loader) loader.style.display = 'none';
+    document.getElementById('loading-screen').style.display = 'none';
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
+        let gestureDetected = false;
 
-        // 1. PINCH DETECTION (Question 1)
+        // --- STAGE 1: PINCH ---
         if (currentStage === 1 && !transitionLocked) {
             const thumb = landmarks[4];
             const index = landmarks[8];
-            const distance = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+            const dist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
 
-            if (distance < 0.05) {
-                transitionLocked = true;
-                
-                // Action: UI Change
-                uiStage1.classList.remove('active');
-                
-                // Firework loop for 3 seconds
-                let fwInterval = setInterval(triggerFirework, 100);
-                setTimeout(() => clearInterval(fwInterval), 3000);
-
-                // Wait 15 Seconds then show Q2
-                setTimeout(() => {
-                    currentStage = 2;
-                    transitionLocked = false;
-                    uiStage2.classList.add('active');
-                }, 15000); 
+            // Strict pinch distance
+            if (dist < 0.05) {
+                gestureDetected = true;
+                holdTimer++;
+                // TRIGGER SMALL PARTICLES WHILE HOLDING
+                if(holdTimer % 5 === 0) explode(2); 
             }
         }
 
-        // 2. RAISE HAND DETECTION (Question 2)
+        // --- STAGE 2: HIGH HAND ---
         if (currentStage === 2 && !transitionLocked) {
             const middleTip = landmarks[12];
+            const wrist = landmarks[0];
             
-            // Check if Middle Finger Tip Y is < 0.3 (Top 30% of screen)
-            if (middleTip.y < 0.3) {
-                transitionLocked = true;
-
-                uiStage2.classList.remove('active');
-                uiStage3.classList.add('active');
-                currentStage = 3;
-
-                // MASSIVE CELEBRATION
-                setInterval(triggerFirework, 50); // Fast fireworks forever
+            // Hand must be OPEN (distance wrist to tip is large)
+            const handSize = Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y);
+            // Hand must be HIGH (y < 0.3)
+            
+            if (middleTip.y < 0.3 && handSize > 0.2) {
+                gestureDetected = true;
+                holdTimer++;
+                if(holdTimer % 5 === 0) explode(2);
             }
+        }
+
+        // --- TRANSITION LOGIC (Must hold for 30 frames ~ 1 second) ---
+        if (gestureDetected) {
+            if (holdTimer > 30) {
+                nextLevel();
+            }
+        } else {
+            holdTimer = 0; // Reset if hand moves
         }
     }
 }
 
-// Setup MediaPipe
+function nextLevel() {
+    if (transitionLocked) return;
+    transitionLocked = true;
+    holdTimer = 0;
+
+    if (currentStage === 1) {
+        // Clear Stage 1
+        uiStage1.classList.remove('active');
+        
+        // EXPLOSION LOOP (3 Seconds)
+        let count = 0;
+        const interval = setInterval(() => {
+            explode(20); // Big explosion
+            count++;
+            if(count > 30) clearInterval(interval);
+        }, 100);
+
+        // Wait 15s for Stage 2
+        setTimeout(() => {
+            currentStage = 2;
+            transitionLocked = false;
+            uiStage2.classList.add('active');
+        }, 15000);
+    }
+    else if (currentStage === 2) {
+        // Clear Stage 2
+        uiStage2.classList.remove('active');
+        
+        // Show Final
+        currentStage = 3;
+        uiStage3.classList.add('active');
+
+        // PERMANENT CELEBRATION
+        setInterval(() => {
+            explode(30);
+        }, 200);
+    }
+}
+
+// MediaPipe Setup
 const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
 hands.onResults(onResults);
 
-// Setup Camera
 const cameraUtils = new Camera(videoElement, {
     onFrame: async () => { await hands.send({image: videoElement}); },
     width: 1280, height: 720
 });
-
-// Error Handling for Camera
-cameraUtils.start().catch(err => {
-    console.error(err);
-    document.getElementById('error-msg').style.display = 'block';
-});
+cameraUtils.start();
 
 // ==========================================
 // 4. ANIMATION LOOP
@@ -210,40 +236,43 @@ cameraUtils.start().catch(err => {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Rotate ambient dust
-    dustParticles.rotation.y += 0.001;
+    // Update all 3 particle systems
+    systems.forEach(sys => {
+        const positions = sys.geo.attributes.position.array;
+        const lifes = sys.geo.attributes.life.array;
 
-    // Physics for Explosion Particles
-    const pos = explodeGeo.attributes.position.array;
-    const alphas = explodeGeo.attributes.alpha.array;
+        for(let i=0; i<sys.count; i++) {
+            if (lifes[i] > 0) {
+                const i3 = i*3;
+                
+                // Move Up
+                positions[i3] += sys.vel[i3];
+                positions[i3+1] += sys.vel[i3+1];
+                positions[i3+2] += sys.vel[i3+2];
 
-    for(let i=0; i<explodeCount; i++) {
-        if(alphas[i] > 0) {
-            const i3 = i*3;
-            // Move
-            pos[i3] += explodeVel[i3];
-            pos[i3+1] += explodeVel[i3+1];
-            pos[i3+2] += explodeVel[i3+2];
-            
-            // Gravity
-            explodeVel[i3+1] -= 0.02;
+                // Gravity/Wobble
+                if (sys.points.material.map.image) {
+                     // Wobble X for balloons
+                     positions[i3] += Math.sin(Date.now() * 0.005 + i) * 0.02;
+                }
 
-            // Fade out
-            alphas[i] -= 0.01;
+                // Fade Out
+                lifes[i] -= 0.005;
+                if(lifes[i] <= 0) positions[i3+1] = -500; // Reset off screen
+            }
         }
-    }
-    explodeGeo.attributes.position.needsUpdate = true;
-    explodeGeo.attributes.alpha.needsUpdate = true;
+        sys.geo.attributes.position.needsUpdate = true;
+        sys.geo.attributes.life.needsUpdate = true;
+    });
 
     renderer.render(scene, camera);
 }
 
-// Handle Window Resize
+// Handle Resize
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Start Animation
 animate();
