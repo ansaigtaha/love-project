@@ -183,7 +183,7 @@
             {
                 id: 0,
                 type: 'tap',
-                main: "Oy Immii", // Title Case matches cursive font better
+                main: "Oy Immii", 
                 sub: "I made this only for you ❤️",
                 instr: "Tap Screen",
                 color: "#ff4d6d"
@@ -233,6 +233,10 @@
         // Force Audio on First Click (Solves Mobile Issue)
         startBtn.addEventListener('click', () => {
             audio.volume = 0.5;
+            
+            // --- JUMP TO 1 SECOND ---
+            audio.currentTime = 1; 
+
             audio.play().then(() => {
                 // Audio started successfully
                 startOverlay.style.opacity = '0';
